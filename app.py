@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from llama_index.core.query_engine import NLSQLTableQueryEngine
 from llama_index.core.tools import QueryEngineTool
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.ollama import Ollama
 from llama_index.core.retrievers import VectorIndexAutoRetriever
 from llama_index.core.vector_stores import MetadataInfo, VectorStoreInfo
 from llama_index.core import Settings
@@ -18,14 +19,14 @@ from sqlalchemy.sql import select
 from llama_index.llms.openai import OpenAI
 import chromadb
 from llama_index.core import Document
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+# openai.api_key = os.environ.get("OPENAI_API_KEY")
 load_dotenv()
 
 app = Flask(__name__)
 collection_name = "sql-db"
 chroma_client = chromadb.PersistentClient()
-llm = OpenAI(model="gpt-4")
-# llm = Ollama(model="llama2")
+# llm = OpenAI(model="gpt-4", temperature=0)
+llm = Ollama(model="mistral", )
 # resp = llm.complete("Who is Paul Graham?")
 
 # print(resp)
@@ -43,7 +44,6 @@ except:
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 vector_index = VectorStoreIndex([], storage_context=storage_context)
-print(vector_index, "vector_index")
 
 
 @app.route('/')
@@ -55,11 +55,10 @@ DatabaseUrl = os.getenv("DATABASE_URL")
 engine = sqlalchemy.create_engine(DatabaseUrl)
 sql_database = SQLDatabase(engine)
 sql_query_engine = NLSQLTableQueryEngine(
-    sql_database=sql_database
+    sql_database=sql_database, verbose=True, llm=llm
 )
 
 
-# @app.route('/vector_indexing', methods=['POST'])
 def vector_indexing():
     # Get metadata about all tables in the database
     metadata = sqlalchemy.MetaData()
@@ -100,9 +99,10 @@ def vector_indexing():
     # Insert all documents into the vector index
     nodes = Settings.node_parser.get_nodes_from_documents(all_documents)
     vector_index.insert_nodes(nodes)
-    return jsonify({"success": True})
+    return True
 
 
+# calling the function
 # vector_indexing()
 
 
@@ -119,37 +119,41 @@ def query_engine():
             ),
         ],
     )
-
     vector_auto_retriever = VectorIndexAutoRetriever(
         vector_index, vector_store_info=vector_store_info
     )
-
     retriever_query_engine = RetrieverQueryEngine.from_args(
         vector_auto_retriever, llm=llm
     )
-
     sql_tool = QueryEngineTool.from_defaults(
         query_engine=sql_query_engine,
         description=(
-            "Useful for executing any SQL query on the database. "
-            "This tool does not allow insert, delete, or alter actions."
-            "Input should be a SQL query."
+            "This tool is designed for querying the database using SQL. "
+            "You can ask any question or execute any complex SQL query to retrieve data. "
+            "For example, you can use SELECT statements to fetch data, JOIN clauses to combine data from multiple tables, "
+            "or WHERE clauses to filter results based on specific conditions."
+            "Filter results based on specific conditions."
         ),
     )
-
+    # Setting a detailed description for the Vector tool
     vector_tool = QueryEngineTool.from_defaults(
         query_engine=retriever_query_engine,
         description=(
-            "Useful for retrieving data from the database. "
-            "This tool does not allow insert, delete, or alter actions."
-            "Input should be a string. "
+            "It is particularly useful for answering questions related to document similarity or content retrieval."
+            "It can be used to retrieve data from the vector index using the vector_auto_retriever. "
         )
+
 
     )
     query_engine = SQLAutoVectorQueryEngine(
-        sql_tool, vector_tool, llm=llm
+        sql_tool, vector_tool, llm=llm, verbose=True
     )
-    response = query_engine.query(query)
+
+    # Combine Response from SQL tool and Response from Vector tool
+    # response = query_engine.query(query)
+
+    # Only Response from SQL tool
+    response = sql_query_engine.query(query)
     response_str = str(response)
     return jsonify({"output": response_str}), 200
 
