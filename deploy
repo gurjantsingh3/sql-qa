@@ -4,7 +4,7 @@ user="ubuntu"
 host="192.168.1.99"
 destination="/home/ubuntu/sql_qa/"
 
-rsync -avzh --exclude deploy --exclude venv --exclude chroma --exclude .git --exclude .vscode --exclude .env --exclude README.md --exclude  .gitignore --exclude "__pycache__/" . $user@$host:$destination
+rsync -avzh --exclude deploy --exclude venv --exclude chroma --exclude .git --exclude .vscode --exclude .env --exclude README.md --exclude Chinook.db --exclude Chinook_sqlite.sql --exclude .gitignore --exclude "__pycache__/" . $user@$host:$destination
 
 ssh $user@$host <<ENDSSH
     cd $destination

@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 from llama_index.core.query_engine import NLSQLTableQueryEngine
 from llama_index.core.tools import QueryEngineTool
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.ollama import Ollama
 from llama_index.core.retrievers import VectorIndexAutoRetriever
 from llama_index.core.vector_stores import MetadataInfo, VectorStoreInfo
 from llama_index.core import Settings
@@ -19,15 +18,15 @@ from sqlalchemy.sql import select
 from llama_index.llms.openai import OpenAI
 import chromadb
 from llama_index.core import Document
-# openai.api_key = os.environ.get("OPENAI_API_KEY")
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 load_dotenv()
 
+DatabaseUrl = os.getenv("DATABASE_URL")
+print(DatabaseUrl)
 app = Flask(__name__)
 collection_name = "sql-db"
 chroma_client = chromadb.PersistentClient()
-# llm = OpenAI(model="gpt-4", temperature=0)
-llm = Ollama(model="mistral", )
-# resp = llm.complete("Who is Paul Graham?")
+llm = OpenAI(model="gpt-3.5-turbo", temperature=0)
 
 # print(resp)
 
@@ -51,9 +50,10 @@ def index():
     return render_template('index.html')
 
 
-DatabaseUrl = os.getenv("DATABASE_URL")
-engine = sqlalchemy.create_engine(DatabaseUrl)
-sql_database = SQLDatabase(engine)
+# connect sqlite3 with path
+sql_database = SQLDatabase.from_uri(DatabaseUrl)
+print(sql_database.get_table_columns("album"))
+engine = sql_database.engine
 sql_query_engine = NLSQLTableQueryEngine(
     sql_database=sql_database, verbose=True, llm=llm
 )
@@ -150,10 +150,10 @@ def query_engine():
     )
 
     # Combine Response from SQL tool and Response from Vector tool
-    # response = query_engine.query(query)
+    response = query_engine.query(query)
 
     # Only Response from SQL tool
-    response = sql_query_engine.query(query)
+    # response = sql_query_engine.query(query)
     response_str = str(response)
     return jsonify({"output": response_str}), 200
 

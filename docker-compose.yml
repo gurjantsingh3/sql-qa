@@ -8,6 +8,8 @@ services:
       - ./.env:/app/.env
       - ./app.py:/app/app.py
       - ./chroma:/app/chroma
+      - ./Chinook.db:/app/Chinook.db
+      - ./Chinook_sqlite.sql:/app/Chinook_sqlite.sql
     working_dir: /app
     command: "python3 app.py"
     env_file:
@@ -15,12 +17,12 @@ services:
     ports:
       - 8000
     networks:
-          - npm_default
-          # - default
+          # - npm_default
+          - default
 networks:
-  npm_default:
-    external: true
-  # default:
+  # npm_default:
+  #   external: true
+  default:
      
   
 
