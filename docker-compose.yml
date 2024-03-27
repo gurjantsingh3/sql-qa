@@ -9,7 +9,7 @@ services:
       - ./app.py:/app/app.py
       - ./chroma:/app/chroma
       - ./Chinook.db:/app/Chinook.db
-      - ./Chinook_sqlite.sql:/app/Chinook_sqlite.sql
+      - ./Chinook_Sqlite.sql:/app/Chinook_Sqlite.sql
     working_dir: /app
     command: "python3 app.py"
     env_file:
