@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from llama_index.core.query_engine import NLSQLTableQueryEngine
 from llama_index.core.tools import QueryEngineTool
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.ollama import Ollama
 from llama_index.core.retrievers import VectorIndexAutoRetriever
 from llama_index.core.vector_stores import MetadataInfo, VectorStoreInfo
 from llama_index.core import Settings
@@ -28,18 +29,11 @@ collection_name = "sql-db"
 chroma_client = chromadb.PersistentClient()
 llm = OpenAI(model="gpt-3.5-turbo", temperature=0)
 
-# print(resp)
-
 try:
-    # Try to get the existing collection
     chroma_collection = chroma_client.get_collection(collection_name)
-    # print("Collection '{}' already exists.".format(collection_name))
 except:
-    # If collection does not exist, create it
     chroma_collection = chroma_client.create_collection(collection_name)
-    # print("Collection '{}' created.".format(collection_name))
 
-# Create ChromaVectorStore using the existing or newly created collection
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 vector_index = VectorStoreIndex([], storage_context=storage_context)
@@ -50,15 +44,89 @@ def index():
     return render_template('index.html')
 
 
-# connect sqlite3 with path
-sql_database = SQLDatabase.from_uri(DatabaseUrl)
-print(sql_database.get_table_columns("album"))
-engine = sql_database.engine
+engine = sqlalchemy.create_engine(DatabaseUrl)
+
+selected_tables = ["ActivityLog",
+                   "AspNetUsers",
+                   "Category",
+                   "Checklists",
+                   "ChecklistFields",
+                   "ChecklistFieldTypes",
+                   "ChecklistSections",
+                   "ChecklistStatus",
+                   "ChecklistSubmissions",
+                   "Customer",
+                   "DailyWorkEmployees",
+                   "Departments",
+                   "EmployeeLeaves",
+                   "Employees",
+                   "Gridowners",
+                   "GridStatus",
+                   "Incidents",
+                   "IncidentStatus",
+                   "IncidentFiles",
+                   "InstallerActivityLog",
+                   "Issues",
+                   "IssueStatus",
+                   "LeaveTypes",
+                   "LeaveStatus",
+                   "MessageTemplates",
+                   "NonProjectWorkHours",
+                   "NonProjectWorkTypes",
+                   "OrderChecklists",
+                   "OrderComments",
+                   "OrderCoordination",
+                   "OrderEmployees",
+                   "OrderEquipments",
+                   "OrderImage",
+                   "OrderInverterImages",
+                   "OrderInverters",
+                   "OrderItem",
+                   "OrderLogistics",
+                   "OrderMessages",
+                   "OrderMeterDetails",
+                   "OrderProducts",
+                   "Orders",
+                   "OrderShipments",
+                   "OrdersHistory",
+                   "OrderStatus",
+                   "OrderTeams",
+                   "OrderUsers",
+                   "OtherProjects",
+                   "OtherTasks",
+                   "PanelTypes",
+                   "Partner",
+                   "PartnerUsers",
+                   "Phase",
+                   "PriorityProjects",
+                   "PriceMatrix",
+                   "Product",
+                   "Products",
+                   "ProjectsListResponse",
+                   "QuoteDocuments",
+                   "QuoteNotes",
+                   "Quotes",
+                   "QuotesUsers",
+                   "ReferenceIncidents",
+                   "Roles",
+                   "RoofAreaGeometry",
+                   "RoofAreaParts",
+                   "RoofAreas",
+                   "RoofTypes",
+                   "Scheduler",
+                   "SchedulerEmployees",
+                   "Status",
+                   "Teams",
+                   "TimeKeeping",
+                   "TripletexExportLog",
+                   "Users",
+                   "UsersIssueAssignment"]
+sql_database = SQLDatabase(engine=engine, include_tables=selected_tables)
 sql_query_engine = NLSQLTableQueryEngine(
     sql_database=sql_database, verbose=True, llm=llm
 )
 
-
+'''
 def vector_indexing():
     # Get metadata about all tables in the database
     metadata = sqlalchemy.MetaData()
@@ -77,7 +145,8 @@ def vector_indexing():
         column_names = [column.name for column in table.columns]
 
         # Construct a document containing the table name, column names, and row data
-        document_text = f"Table: {table_name},\n Columns: {', '.join(column_names)}\n"
+        document_text = f"Table: {table_name},\n Columns: {
+            ', '.join(column_names)}\n"
 
         # Construct select statement with all columns
         query = select(table)
@@ -101,9 +170,9 @@ def vector_indexing():
     vector_index.insert_nodes(nodes)
     return True
 
-
 # calling the function
 # vector_indexing()
+'''
 
 
 @app.route("/query", methods=["POST"])

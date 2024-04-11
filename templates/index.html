@@ -212,6 +212,10 @@
             scrollBottom();
             data.push({ question: getQuestion, answer: res.output });
             console.log(data, "dsdsd");
+          })
+          .catch((err) => {
+            hideLoader();
+            alert(err);
           });
       }
 
